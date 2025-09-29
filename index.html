@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,follow" />
+    <link rel="icon" href="favicon.ico" />
+    <title>Risiko-Simulator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      header,
+      footer {
+        text-align: center;
+        margin: 16px;
+        padding: 4px;
+      }
+      main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        padding: 24px;
+      }
+      .card {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      input[type="number"] {
+        height: 40px;
+        font-size: 16px;
+        padding: 0 10px;
+        width: 250px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .btn {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        padding-left: 10px;
+        padding-right: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      .btn:hover {
+        background: #f0f0f0;
+        border-color: #999;
+      }
+      #verteidiger-liste {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .verteidiger-row {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+      }
+      #angreifer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #verteidiger {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #berechnenBtn {
+        margin-top: 30px;
+      }
+      pre {
+        margin-top: 4px;
+        background: #272822;
+        color: #f8f8f2;
+        padding: 16px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Risiko-Simulator</h1>
+    </header>
+    <main>
+      <div id="config-card" class="card">
+        <div id="angreifer">
+          <h3>Angreifer</h3>
+          <input id="angreifer-input" type="number" value="1" min="1" />
+        </div>
+        <div id="verteidiger">
+          <h3>Verteidiger</h3>
+          <div id="verteidiger-liste">
+            <div class="verteidiger-row">
+              <input
+                class="verteidiger-input"
+                type="number"
+                value="1"
+                min="1"
+              />
+              <button class="btn entfernenBtn" style="visibility: hidden">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="24px"
+                  viewBox="0 -960 960 960"
+                  width="24px"
+                  fill="#000000"
+                >
+                  <path
+                    d="M304.62-160q-26.85 0-45.74-18.88Q240-197.77 240-224.62V-720h-40v-40h160v-30.77h240V-760h160v40h-40v495.38q0 27.62-18.5 46.12Q683-160 655.38-160H304.62ZM680-720H280v495.38q0 10.77 6.92 17.7 6.93 6.92 17.7 6.92h350.76q9.24 0 16.93-7.69 7.69-7.69 7.69-16.93V-720ZM392.31-280h40v-360h-40v360Zm135.38 0h40v-360h-40v360ZM280-720v520-520Z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <button id="hinzufügenBtn" class="btn" type="button">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height="24px"
+                viewBox="0 -960 960 960"
+                width="24px"
+                fill="#000000"
+              >
+                <path
+                  d="M460-460H240v-40h220v-220h40v220h220v40H500v220h-40v-220Z"
+                />
+              </svg>
+              Verteidiger hinzufügen
+            </button>
+          </div>
+        </div>
+        <button id="berechnenBtn" class="btn" type="button">Berechnen</button>
+        <pre id="result-output" style="display: none"></pre>
+      </div>
+    </main>
+    <footer>© 2024 Risiko-Simulator</footer>
+    <script type="module" src="dist/cache.js"></script>
+    <script type="module" src="dist/simulator.js"></script>
+    <script type="module">
+      import { berechneEroberungsSequenz } from "./dist/simulator.js";
+      import { Cache } from "./dist/cache.js";
+
+      const cache = await Cache.create();
+
+      document
+        .getElementById("hinzufügenBtn")
+        .addEventListener("click", addVerteidiger);
+      document
+        .getElementById("berechnenBtn")
+        .addEventListener("click", berechnen);
+
+      function berechnen() {
+        const angreiferInput = document.getElementById("angreifer-input");
+        const verteidigerInput =
+          document.getElementsByClassName("verteidiger-input");
+        const angreifer = angreiferInput.value;
+        const verteidger = Array.from(verteidigerInput).map(
+          (input) => input.value
+        );
+        const result = berechneEroberungsSequenz(angreifer, verteidger, cache);
+        const obj = Object.fromEntries(result);
+        Object.entries(obj).forEach(
+          ([key, value]) =>
+            (obj[key] = parseFloat(value).toLocaleString("de-DE", {
+              style: "percent",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }))
+        );
+        const json = JSON.stringify(obj, null, 2);
+        const rsltOutput = document.getElementById("result-output");
+        rsltOutput.style.display = "block";
+        rsltOutput.innerText = json;
+      }
+      function addVerteidiger() {
+        const div = document.getElementById("verteidiger-liste");
+        const newRow = document.createElement("div");
+        newRow.classList.add("verteidiger-row");
+        const newInput = document.createElement("input");
+        newInput.classList.add("verteidiger-input");
+        newInput.setAttribute("type", "number");
+        newInput.setAttribute("value", 1);
+        newInput.setAttribute("min", 1);
+        const newBtn = document.createElement("button");
+        newBtn.addEventListener("click", (_) => newRow.remove());
+        newBtn.classList.add("btn");
+        newBtn.classList.add("entfernenBtn");
+        newBtn.innerHTML = `
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="24px"
+                    viewBox="0 -960 960 960"
+                    width="24px"
+                    fill="#000000"
+                >
+                    <path
+                        d="M304.62-160q-26.85 0-45.74-18.88Q240-197.77 240-224.62V-720h-40v-40h160v-30.77h240V-760h160v40h-40v495.38q0 27.62-18.5 46.12Q683-160 655.38-160H304.62ZM680-720H280v495.38q0 10.77 6.92 17.7 6.93 6.92 17.7 6.92h350.76q9.24 0 16.93-7.69 7.69-7.69 7.69-16.93V-720ZM392.31-280h40v-360h-40v360Zm135.38 0h40v-360h-40v360ZM280-720v520-520Z"
+                    />
+                </svg>
+            `;
+        newRow.appendChild(newInput);
+        newRow.appendChild(newBtn);
+        div.appendChild(newRow);
+      }
+    </script>
+  </body>
+</html>
